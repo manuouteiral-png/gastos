@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Gastos"/>
+<meta name="theme-color" content="#0f0f0f"/>
+<link rel="manifest" href="manifest.json"/>
+<title>Gastos</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  :root{
+    --bg:#0f0f0f;--bg2:#181818;--bg3:#222;--bg4:#2a2a2a;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+    --text:#f0f0f0;--text2:#999;--text3:#555;
+    --accent:#e8ff5a;--accent-dim:rgba(232,255,90,0.1);--accent-dim2:rgba(232,255,90,0.18);
+    --red:#ff5a5a;--green:#5affb0;
+    --r:14px;--rs:8px;--rm:10px;
+  }
+  html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden;}
+  .app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto;}
+
+  /* HEADER */
+  .header{padding:20px 20px 14px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;}
+  .header-row{display:flex;justify-content:space-between;align-items:center;}
+  .month-nav{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .month-btn{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 2px;line-height:1;}
+  .month-btn:active{color:var(--text);}
+  .month-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-family:'DM Sans',sans-serif;}
+  .total-valor{font-family:'DM Mono',monospace;font-size:30px;font-weight:500;color:var(--text);letter-spacing:-1px;}
+  .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+  .hoy-wrap{text-align:right;}
+  .hoy-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+  .hoy-valor{font-family:'DM Mono',monospace;font-size:16px;color:var(--text2);}
+  .btn-mic{width:42px;height:42px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+  .btn-mic.active{background:var(--accent-dim2);border-color:var(--accent);}
+
+  /* TABS */
+  .tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;}
+  .tab-btn{flex:1;padding:10px 0;font-size:12px;font-family:'DM Sans',sans-serif;border:none;background:transparent;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.3px;transition:color .15s;}
+  .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+  /* CONTENT */
+  .tab-content{display:none;flex:1;overflow-y:auto;padding:16px;}
+  .tab-content.active{display:block;}
+  .tab-content::-webkit-scrollbar{width:0;}
+
+  /* GRUPOS */
+  .grupo-section{margin-bottom:18px;}
+  .grupo-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  .dot{border-radius:50%;flex-shrink:0;}
+  .cats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .cat-btn{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 10px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .15s,background .1s;-webkit-user-select:none;user-select:none;}
+  .cat-btn:active{background:var(--bg3);}
+  .cat-emoji{font-size:22px;flex-shrink:0;}
+  .cat-info{min-width:0;overflow:hidden;}
+  .cat-nombre{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cat-sub{font-size:11px;color:var(--text3);margin-top:1px;display:flex;align-items:center;gap:3px;}
+  .btn-add-cat{width:100%;padding:12px;background:transparent;border:1px dashed var(--border2);border-radius:var(--r);color:var(--text3);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:4px;}
+  .btn-add-cat:active{border-color:var(--accent);color:var(--accent);}
+
+  /* HISTORIAL */
+  .hist-item{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
+  .hist-left{display:flex;align-items:center;gap:10px;min-width:0;}
+  .hist-emoji{font-size:20px;flex-shrink:0;}
+  .hist-info{min-width:0;}
+  .hist-nombre{font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:5px;}
+  .hist-meta{font-size:11px;color:var(--text3);margin-top:1px;display:flex;align-items:center;gap:4px;}
+  .hist-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .hist-monto{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--text);}
+  .hist-actions{display:flex;gap:4px;opacity:0;}
+  .hist-item:hover .hist-actions,.hist-item:active .hist-actions{opacity:1;}
+  .hist-btn{background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px;color:var(--text3);border-radius:4px;}
+  .hist-btn:hover{color:var(--text);background:var(--bg3);}
+  .hist-btn.del:hover{color:var(--red);}
+  .empty-state{text-align:center;padding:48px 0;color:var(--text3);font-size:13px;}
+
+  /* RESUMEN */
+  .toggle-wrap{display:flex;background:var(--bg2);border-radius:var(--rs);padding:3px;margin-bottom:16px;}
+  .toggle-btn{flex:1;padding:7px 0;font-size:12px;border:none;border-radius:6px;background:transparent;color:var(--text3);font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;}
+  .toggle-btn.active{background:var(--bg3);color:var(--text);border:1px solid var(--border2);}
+  .mes-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .mes-nav-label{font-size:13px;font-weight:500;color:var(--text);}
+  .mes-nav-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .mes-nav-btn:active{border-color:var(--accent);color:var(--accent);}
+  .resumen-total{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;color:var(--text);margin-bottom:16px;}
+  .res-item{margin-bottom:12px;}
+  .res-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+  .res-nombre{font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px;}
+  .res-vals{display:flex;align-items:baseline;gap:6px;}
+  .res-monto{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text);}
+  .res-pct{font-size:11px;color:var(--text3);}
+  .barra-bg{background:var(--bg3);border-radius:3px;height:5px;}
+  .barra-fill{border-radius:3px;height:5px;transition:width .4s ease;}
+
+  /* MESES OVERVIEW */
+  .meses-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
+  .mes-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rm);padding:12px;cursor:pointer;transition:border-color .15s;}
+  .mes-card:active,.mes-card.selected{border-color:var(--border2);}
+  .mes-card-label{font-size:11px;color:var(--text3);text-transform:capitalize;margin-bottom:4px;}
+  .mes-card-total{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--text);}
+  .mes-card-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+
+  /* CONFIG */
+  .cfg-grupo-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:0 0 6px;display:flex;align-items:center;gap:6px;}
+  .cfg-item{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;background:var(--bg2);border-radius:var(--rs);margin-bottom:4px;border:1px solid var(--border);}
+  .cfg-item-left{font-size:13px;color:var(--text);display:flex;align-items:center;gap:6px;min-width:0;}
+  .cfg-badge{font-size:11px;color:var(--text3);}
+  .cfg-actions{display:flex;gap:6px;flex-shrink:0;}
+  .btn-fijar{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+  .btn-del-sm{background:none;border:none;cursor:pointer;font-size:14px;color:var(--text3);padding:0 2px;}
+  .btn-del-sm:hover{color:var(--red);}
+  .form-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-top:12px;}
+  .form-title{font-size:12px;font-weight:500;color:var(--text);margin-bottom:10px;}
+  .form-input{width:100%;padding:9px 10px;border-radius:var(--rs);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:8px;}
+  .form-input::placeholder{color:var(--text3);}
+  .form-select{width:100%;padding:9px 10px;border-radius:var(--rs);border:1px solid var(--border2);background:var(--bg3);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:10px;}
+  .form-row{display:flex;gap:8px;margin-bottom:8px;}
+  .form-color{height:36px;border-radius:var(--rs);border:1px solid var(--border2);cursor:pointer;width:100%;margin-bottom:8px;}
+  .btn-primary{width:100%;padding:10px;background:var(--accent);color:#0f0f0f;border:none;border-radius:var(--rs);font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;}
+  .btn-primary:active{opacity:.85;}
+
+  /* MODALES */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:50;align-items:flex-end;backdrop-filter:blur(4px);}
+  .modal-overlay.open{display:flex;}
+  .modal-sheet{background:var(--bg2);width:100%;max-width:480px;margin:0 auto;border-radius:20px 20px 0 0;padding:20px 18px 36px;border-top:1px solid var(--border2);}
+  .modal-handle{width:36px;height:4px;background:var(--bg4);border-radius:2px;margin:0 auto 18px;}
+  .modal-tag{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;display:flex;align-items:center;gap:6px;}
+  .modal-title{font-size:19px;font-weight:500;color:var(--text);margin-bottom:16px;}
+  .monto-wrap{display:flex;align-items:center;gap:8px;background:var(--bg3);border-radius:var(--r);padding:12px 16px;margin-bottom:10px;border:1px solid var(--border2);}
+  .monto-pre{font-family:'DM Mono',monospace;font-size:22px;color:var(--text3);}
+  .monto-input{flex:1;font-family:'DM Mono',monospace;font-size:28px;font-weight:500;border:none;background:transparent;color:var(--accent);outline:none;width:100%;}
+  .sugs{display:flex;gap:6px;flex-wrap:wrap;min-height:30px;margin-bottom:14px;}
+  .sug-btn{padding:5px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;cursor:pointer;}
+  .modal-actions{display:flex;gap:8px;}
+  .btn-cancel{flex:1;padding:13px;background:var(--bg3);border:none;border-radius:var(--rs);font-size:14px;color:var(--text2);font-family:'DM Sans',sans-serif;cursor:pointer;}
+  .btn-confirm{flex:2;padding:13px;background:var(--accent);color:#0f0f0f;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;}
+  .btn-danger{flex:2;padding:13px;background:var(--red);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;}
+
+  /* MODAL VOZ */
+  .voz-center{text-align:center;}
+  .mic-ring{width:76px;height:76px;border-radius:50%;background:var(--accent-dim2);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:32px;animation:pulse 1.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,255,90,.3);}50%{box-shadow:0 0 0 12px rgba(232,255,90,0);}}
+  .voz-title{font-size:16px;font-weight:500;color:var(--text);margin-bottom:6px;}
+  .voz-hint{font-size:12px;color:var(--text3);margin-bottom:16px;}
+  .voz-live{font-size:14px;color:var(--text2);font-style:italic;min-height:22px;margin-bottom:20px;}
+  .btn-voz-cancel{padding:10px 28px;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;font-size:13px;color:var(--text2);font-family:'DM Sans',sans-serif;cursor:pointer;}
+  .voz-confirmar-card{background:var(--bg3);border-radius:var(--r);padding:14px;margin-bottom:14px;}
+  .voz-cat-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+  .voz-emoji{font-size:28px;}
+  .voz-cat-nombre{font-size:16px;font-weight:500;color:var(--text);}
+  .voz-cat-grupo{font-size:12px;color:var(--text3);}
+  .voz-nota{font-size:11px;color:var(--text3);margin-bottom:14px;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg2);color:var(--text);padding:10px 20px;border-radius:20px;font-size:13px;white-space:nowrap;z-index:100;pointer-events:none;border:1px solid var(--border2);display:none;}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-row">
+      <div>
+        <div class="month-nav">
+          <button class="month-btn" onclick="cambiarMesHeader(-1)">‹</button>
+          <span class="month-label" id="header-mes-label"></span>
+          <button class="month-btn" onclick="cambiarMesHeader(1)">›</button>
+        </div>
+        <div class="total-valor" id="total-mes">$0</div>
+      </div>
+      <div class="header-right">
+        <div class="hoy-wrap">
+          <div class="hoy-label">Hoy</div>
+          <div class="hoy-valor" id="total-hoy">$0</div>
+        </div>
+        <button class="btn-mic" id="btn-mic" onclick="toggleMic()">🎙️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-registrar" onclick="showTab('registrar')">Registrar</button>
+    <button class="tab-btn" id="tab-historial" onclick="showTab('historial')">Historial</button>
+    <button class="tab-btn" id="tab-resumen" onclick="showTab('resumen')">Resumen</button>
+    <button class="tab-btn" id="tab-config" onclick="showTab('config')">⚙️</button>
+  </div>
+
+  <!-- REGISTRAR -->
+  <div class="tab-content active" id="content-registrar">
+    <div id="grupos-container"></div>
+    <button class="btn-add-cat" onclick="showTab('config')">+ Agregar categoría</button>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="tab-content" id="content-historial">
+    <div id="historial-lista"></div>
+  </div>
+
+  <!-- RESUMEN -->
+  <div class="tab-content" id="content-resumen">
+    <div class="toggle-wrap">
+      <button class="toggle-btn active" id="toggle-overview" onclick="setVistaRes('overview')">Meses</button>
+      <button class="toggle-btn" id="toggle-grupo" onclick="setVistaRes('grupo')">Por grupo</button>
+      <button class="toggle-btn" id="toggle-cat" onclick="setVistaRes('categoria')">Por categoría</button>
+    </div>
+    <div id="resumen-contenido"></div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="tab-content" id="content-config">
+    <div id="config-lista"></div>
+    <div class="form-card">
+      <div class="form-title">Nueva categoría</div>
+      <input class="form-input" id="nc-nombre" type="text" placeholder="Nombre"/>
+      <input class="form-input" id="nc-emoji" type="text" placeholder="Emoji (ej: 🎯)"/>
+      <select class="form-select" id="nc-grupo"></select>
+      <button class="btn-primary" onclick="agregarCat()">Agregar</button>
+    </div>
+    <div class="form-card">
+      <div class="form-title">Nuevo grupo</div>
+      <div class="form-row">
+        <input class="form-input" id="ng-emoji" type="text" placeholder="🏷️" style="width:52px;flex-shrink:0;text-align:center;margin-bottom:0;"/>
+        <input class="form-input" id="ng-nombre" type="text" placeholder="Nombre del grupo" style="flex:1;margin-bottom:0;"/>
+      </div>
+      <input class="form-color" id="ng-color" type="color" value="#e8ff5a" style="margin-top:8px;"/>
+      <button class="btn-primary" onclick="agregarGrupo()" style="margin-top:8px;">Crear grupo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MONTO -->
+<div class="modal-overlay" id="modal-monto">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-tag"><span class="dot" id="m-dot" style="width:7px;height:7px;"></span><span id="m-grupo"></span></div>
+    <div class="modal-title" id="m-title"></div>
+    <div class="monto-wrap">
+      <div class="monto-pre">$</div>
+      <input class="monto-input" id="m-monto" type="number" placeholder="0" inputmode="numeric"/>
+    </div>
+    <div class="sugs" id="m-sugs"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="cerrarModal('modal-monto')">Cancelar</button>
+      <button class="btn-confirm" onclick="confirmarGasto()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR GASTO -->
+<div class="modal-overlay" id="modal-editar">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-tag">Editar gasto</div>
+    <div class="modal-title" id="edit-title"></div>
+    <div class="monto-wrap">
+      <div class="monto-pre">$</div>
+      <input class="monto-input" id="edit-monto" type="number" inputmode="numeric"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="cerrarModal('modal-editar')">Cancelar</button>
+      <button class="btn-confirm" onclick="guardarEdicion()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR BORRAR -->
+<div class="modal-overlay" id="modal-borrar">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="font-size:16px;">¿Borrar este gasto?</div>
+    <div id="borrar-detalle" style="font-size:13px;color:var(--text3);margin-bottom:20px;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="cerrarModal('modal-borrar')">Cancelar</button>
+      <button class="btn-danger" onclick="confirmarBorrar()">Borrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIG CAT -->
+<div class="modal-overlay" id="modal-cfg">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-tag">Configurar monto fijo</div>
+    <div class="modal-title" id="cfg-title"></div>
+    <div class="monto-wrap" style="margin-bottom:10px;">
+      <div class="monto-pre">$</div>
+      <input class="monto-input" id="cfg-monto" type="number" placeholder="0" inputmode="numeric"/>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:16px;">Dejalo vacío para volver a editable.</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="cerrarModal('modal-cfg')">Cancelar</button>
+      <button class="btn-confirm" onclick="guardarFijo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VOZ -->
+<div class="modal-overlay" id="modal-voz">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div id="voz-escuchando" class="voz-center">
+      <div class="mic-ring">🎙️</div>
+      <div class="voz-title">Escuchando...</div>
+      <div class="voz-hint">Decí "psicólogo 45000" o "cancha 8 mil"</div>
+      <div class="voz-live" id="voz-live"></div>
+      <button class="btn-voz-cancel" onclick="cerrarModalVoz()">Cancelar</button>
+    </div>
+    <div id="voz-confirmar" style="display:none;">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Entendí esto</div>
+      <div class="voz-confirmar-card">
+        <div class="voz-cat-row">
+          <div class="voz-emoji" id="vc-emoji"></div>
+          <div><div class="voz-cat-nombre" id="vc-nombre"></div><div class="voz-cat-grupo" id="vc-grupo"></div></div>
+        </div>
+        <div class="monto-wrap" style="margin-bottom:0;">
+          <div class="monto-pre">$</div>
+          <input class="monto-input" id="vc-monto" type="number" inputmode="numeric"/>
+        </div>
+      </div>
+      <div class="voz-nota">Podés editar el monto antes de confirmar.</div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="cerrarModalVoz()">Cancelar</button>
+        <button class="btn-confirm" onclick="confirmarVoz()">Confirmar</button>
+      </div>
+    </div>
+    <div id="voz-error" style="display:none;" class="voz-center">
+      <div style="font-size:40px;margin-bottom:12px;">😕</div>
+      <div class="voz-title">No entendí bien</div>
+      <div class="voz-hint" id="voz-error-msg"></div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;">
+        <button class="btn-voz-cancel" onclick="cerrarModalVoz()">Cancelar</button>
+        <button class="btn-confirm" style="flex:none;padding:10px 24px;" onclick="reiniciarVoz()">Reintentar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbw4XPCtjYAEXD5RVYKmQQLpMBj9zDd1Dl-Y0MW7MyVFfH8JN01-Nd53nlV_OOnEkDPStg/exec';
+const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// ---- STATE ----
+const DEFAULT_STATE = {
+  grupos:[
+    {nombre:'Comida',emoji:'🍔',color:'#7c6af7'},
+    {nombre:'Social',emoji:'🎉',color:'#f76a4a'},
+    {nombre:'Transporte',emoji:'🚗',color:'#4af7a0'},
+    {nombre:'Personal',emoji:'🛍️',color:'#f74aab'},
+    {nombre:'Salud',emoji:'🧘',color:'#4ab4f7'},
+    {nombre:'Desarrollo',emoji:'🌱',color:'#e8ff5a'},
+  ],
+  categorias:[
+    {nombre:'Comida Oficina',grupo:'Comida',emoji:'🍱',historial:[],montoFijo:null},
+    {nombre:'Pedidos Ya',grupo:'Comida',emoji:'🛵',historial:[],montoFijo:null},
+    {nombre:'Kiosco / Chino',grupo:'Comida',emoji:'🏪',historial:[],montoFijo:null},
+    {nombre:'Salidas',grupo:'Social',emoji:'🎊',historial:[],montoFijo:null},
+    {nombre:'Asados',grupo:'Social',emoji:'🥩',historial:[],montoFijo:null},
+    {nombre:'Recitales',grupo:'Social',emoji:'🎸',historial:[],montoFijo:null},
+    {nombre:'Cancha',grupo:'Social',emoji:'⚽',historial:[],montoFijo:null},
+    {nombre:'Auto',grupo:'Transporte',emoji:'🚘',historial:[],montoFijo:null},
+    {nombre:'Transporte',grupo:'Transporte',emoji:'🚌',historial:[],montoFijo:null},
+    {nombre:'Ropa',grupo:'Personal',emoji:'👕',historial:[],montoFijo:null},
+    {nombre:'Cuidado Personal',grupo:'Personal',emoji:'✨',historial:[],montoFijo:null},
+    {nombre:'Regalos',grupo:'Personal',emoji:'🎁',historial:[],montoFijo:null},
+    {nombre:'Psicólogo',grupo:'Salud',emoji:'🧠',historial:[],montoFijo:null},
+    {nombre:'Gimnasio',grupo:'Salud',emoji:'💪',historial:[],montoFijo:null},
+    {nombre:'Suscripciones',grupo:'Desarrollo',emoji:'📱',historial:[],montoFijo:null},
+    {nombre:'Desarrollo',grupo:'Desarrollo',emoji:'📚',historial:[],montoFijo:null},
+    {nombre:'Carpintería',grupo:'Desarrollo',emoji:'🪵',historial:[],montoFijo:null},
+  ],
+  gastos:[],
+};
+
+function cargarState(){
+  try{const s=localStorage.getItem('gastos_v2');return s?JSON.parse(s):JSON.parse(JSON.stringify(DEFAULT_STATE));}
+  catch(e){return JSON.parse(JSON.stringify(DEFAULT_STATE));}
+}
+function guardarState(){try{localStorage.setItem('gastos_v2',JSON.stringify(state));}catch(e){}}
+
+let state=cargarState();
+let catActual=null,catCfgActual=null,vozResultado=null,editandoIdx=null,borrandoIdx=null;
+let recognition=null,transcripcionFinal='';
+let vistaRes='overview';
+let mesFiltro=new Date(); // fecha para header y historial
+let mesResumen=new Date(); // fecha para resumen detalle
+
+// ---- UTILS ----
+function fmt(n){return'$'+Math.round(n).toLocaleString('es-AR');}
+function colorG(nombre){return(state.grupos.find(g=>g.nombre===nombre)||{}).color||'#888';}
+function mismoMes(ts,ref){const d=new Date(ts);return d.getMonth()===ref.getMonth()&&d.getFullYear()===ref.getFullYear();}
+function gastosDelMes(ref){return state.gastos.filter(g=>mismoMes(g.ts,ref));}
+function totalDelMes(ref){return gastosDelMes(ref).reduce((s,g)=>s+g.monto,0);}
+function totalHoyFn(){const h=new Date().toDateString();return state.gastos.filter(g=>new Date(g.ts).toDateString()===h).reduce((s,g)=>s+g.monto,0);}
+function mesKey(d){return d.getFullYear()+'-'+(d.getMonth()+1);}
+function mesLabel(d){return MESES_ES[d.getMonth()]+' '+d.getFullYear();}
+
+function actualizarTotales(){
+  document.getElementById('header-mes-label').textContent=mesLabel(mesFiltro);
+  document.getElementById('total-mes').textContent=fmt(totalDelMes(mesFiltro));
+  document.getElementById('total-hoy').textContent=fmt(totalHoyFn());
+}
+
+function cambiarMesHeader(delta){
+  mesFiltro=new Date(mesFiltro.getFullYear(),mesFiltro.getMonth()+delta,1);
+  actualizarTotales();
+  actualizarHistorial();
+}
+
+// ---- SHEETS ----
+async function syncSheets(gasto){
+  try{
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({categoria:gasto.cat,grupo:gasto.grupo,monto:gasto.monto,fuente:gasto.fuenteVoz?'voz':(gasto.esFijo?'fijo':'manual')})});
+  }catch(e){}
+}
+
+// ---- TABS ----
+function showTab(tab){
+  ['registrar','historial','resumen','config'].forEach(t=>{
+    document.getElementById('content-'+t).classList.toggle('active',t===tab);
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='resumen')renderResumen();
+  if(tab==='config')renderConfig();
+  if(tab==='historial')actualizarHistorial();
+}
+
+// ---- REGISTRAR ----
+function renderGrupos(){
+  const c=document.getElementById('grupos-container');
+  c.innerHTML='';
+  state.grupos.forEach(g=>{
+    const cats=state.categorias.filter(c=>c.grupo===g.nombre);
+    if(!cats.length)return;
+    const sec=document.createElement('div');sec.className='grupo-section';
+    sec.innerHTML=`<div class="grupo-label"><span class="dot" style="width:6px;height:6px;background:${g.color}"></span>${g.emoji} ${g.nombre}</div><div class="cats-grid" id="grid-${g.nombre.replace(/\W/g,'_')}"></div>`;
+    c.appendChild(sec);
+    const grid=sec.querySelector('.cats-grid');
+    cats.forEach(cat=>{
+      const esFijo=cat.montoFijo!==null;
+      let sub='';
+      if(esFijo)sub=`<span style="font-size:9px">📌</span>${fmt(cat.montoFijo)}`;
+      else if(cat.historial.length)sub=fmt(cat.historial[cat.historial.length-1]);
+      const btn=document.createElement('button');
+      btn.className='cat-btn'+(esFijo?' fijo':'');
+      if(esFijo)btn.style.borderColor=g.color+'50';
+      btn.innerHTML=`<span class="cat-emoji">${cat.emoji}</span><div class="cat-info"><div class="cat-nombre">${cat.nombre}</div><div class="cat-sub">${sub}</div></div>`;
+      btn.onclick=()=>esFijo?registrarDirecto(cat.nombre,cat.montoFijo):abrirModalMonto(cat.nombre);
+      grid.appendChild(btn);
+    });
+  });
+}
+
+function registrarDirecto(catNombre,monto){
+  const cat=state.categorias.find(c=>c.nombre===catNombre);
+  cat.historial.push(monto);
+  const g={id:Date.now(),cat:cat.nombre,grupo:cat.grupo,emoji:cat.emoji,monto,ts:new Date().toISOString(),esFijo:true};
+  state.gastos.unshift(g);
+  guardarState();actualizarTotales();renderGrupos();
+  syncSheets(g);
+  toast('✓ '+cat.nombre+' — '+fmt(monto));
+}
+
+function abrirModalMonto(catNombre){
+  catActual=catNombre;
+  const cat=state.categorias.find(c=>c.nombre===catNombre);
+  document.getElementById('m-dot').style.background=colorG(cat.grupo);
+  document.getElementById('m-grupo').textContent=cat.grupo;
+  document.getElementById('m-title').textContent=cat.emoji+' '+cat.nombre;
+  document.getElementById('m-monto').value='';
+  const sug=document.getElementById('m-sugs');sug.innerHTML='';
+  [...new Set(cat.historial.slice(-8).reverse())].slice(0,3).forEach(m=>{
+    const b=document.createElement('button');b.className='sug-btn';b.textContent=fmt(m);
+    b.onclick=()=>document.getElementById('m-monto').value=m;sug.appendChild(b);
+  });
+  document.getElementById('modal-monto').classList.add('open');
+  setTimeout(()=>document.getElementById('m-monto').focus(),150);
+}
+
+function confirmarGasto(){
+  const monto=parseFloat(document.getElementById('m-monto').value);
+  if(!monto||monto<=0)return;
+  const cat=state.categorias.find(c=>c.nombre===catActual);
+  cat.historial.push(monto);
+  const g={id:Date.now(),cat:cat.nombre,grupo:cat.grupo,emoji:cat.emoji,monto,ts:new Date().toISOString()};
+  state.gastos.unshift(g);
+  cerrarModal('modal-monto');
+  guardarState();actualizarTotales();renderGrupos();
+  syncSheets(g);
+  toast('✓ '+cat.nombre+' — '+fmt(monto));
+}
+
+// ---- EDITAR / BORRAR ----
+function abrirEditar(idx){
+  editandoIdx=idx;
+  const g=state.gastos[idx];
+  document.getElementById('edit-title').textContent=g.emoji+' '+g.cat;
+  document.getElementById('edit-monto').value=g.monto;
+  document.getElementById('modal-editar').classList.add('open');
+  setTimeout(()=>document.getElementById('edit-monto').focus(),150);
+}
+
+function guardarEdicion(){
+  const monto=parseFloat(document.getElementById('edit-monto').value);
+  if(!monto||monto<=0)return;
+  state.gastos[editandoIdx].monto=monto;
+  cerrarModal('modal-editar');
+  guardarState();actualizarTotales();actualizarHistorial();
+  if(document.getElementById('content-resumen').classList.contains('active'))renderResumen();
+  toast('✓ Gasto actualizado');
+}
+
+function abrirBorrar(idx){
+  borrandoIdx=idx;
+  const g=state.gastos[idx];
+  const ts=new Date(g.ts);
+  document.getElementById('borrar-detalle').textContent=g.emoji+' '+g.cat+' — '+fmt(g.monto)+' · '+ts.toLocaleDateString('es-AR');
+  document.getElementById('modal-borrar').classList.add('open');
+}
+
+function confirmarBorrar(){
+  state.gastos.splice(borrandoIdx,1);
+  cerrarModal('modal-borrar');
+  guardarState();actualizarTotales();actualizarHistorial();
+  if(document.getElementById('content-resumen').classList.contains('active'))renderResumen();
+  toast('Gasto eliminado');
+}
+
+// ---- HISTORIAL ----
+function actualizarHistorial(){
+  const lista=document.getElementById('historial-lista');
+  const gastosMes=gastosDelMes(mesFiltro);
+  if(!gastosMes.length){lista.innerHTML='<div class="empty-state">No hay gastos en '+mesLabel(mesFiltro)+'.</div>';return;}
+  lista.innerHTML='';
+  gastosMes.forEach((g,i)=>{
+    // índice real en state.gastos
+    const idxReal=state.gastos.findIndex(x=>x.id===g.id);
+    const ts=new Date(g.ts);
+    const esHoy=new Date().toDateString()===ts.toDateString();
+    const horaStr=ts.getHours()+':'+String(ts.getMinutes()).padStart(2,'0');
+    const fechaStr=esHoy?'Hoy':ts.toLocaleDateString('es-AR');
+    const icono=g.fuenteVoz?' 🎙️':(g.esFijo?' 📌':'');
+    const color=colorG(g.grupo);
+    const div=document.createElement('div');div.className='hist-item';
+    div.innerHTML=`
+      <div class="hist-left">
+        <div class="hist-emoji">${g.emoji}</div>
+        <div class="hist-info">
+          <div class="hist-nombre">${g.cat}<span style="font-size:10px;">${icono}</span></div>
+          <div class="hist-meta"><span class="dot" style="width:5px;height:5px;background:${color}"></span>${fechaStr}, ${horaStr}</div>
+        </div>
+      </div>
+      <div class="hist-right">
+        <div class="hist-monto">${fmt(g.monto)}</div>
+        <div class="hist-actions">
+          <button class="hist-btn" onclick="abrirEditar(${idxReal})" title="Editar">✏️</button>
+          <button class="hist-btn del" onclick="abrirBorrar(${idxReal})" title="Borrar">🗑️</button>
+        </div>
+      </div>`;
+    lista.appendChild(div);
+  });
+}
+
+// ---- RESUMEN ----
+function setVistaRes(v){
+  vistaRes=v;
+  ['overview','grupo','cat'].forEach(x=>{
+    document.getElementById('toggle-'+x).classList.toggle('active',x===v);
+  });
+  renderResumen();
+}
+
+function renderResumen(){
+  const c=document.getElementById('resumen-contenido');
+  c.innerHTML='';
+
+  if(vistaRes==='overview'){
+    // Todos los meses con gastos
+    const mesesConGastos={};
+    state.gastos.forEach(g=>{
+      const k=mesKey(new Date(g.ts));
+      mesesConGastos[k]=(mesesConGastos[k]||0)+g.monto;
+    });
+    const keys=Object.keys(mesesConGastos).sort().reverse();
+    if(!keys.length){c.innerHTML='<div class="empty-state">Registrá gastos para ver el resumen.</div>';return;}
+    const grid=document.createElement('div');grid.className='meses-grid';
+    keys.forEach(k=>{
+      const [yr,mo]=k.split('-').map(Number);
+      const ref=new Date(yr,mo-1,1);
+      const total=mesesConGastos[k];
+      const gastosCant=state.gastos.filter(g=>mismoMes(g.ts,ref)).length;
+      const card=document.createElement('div');card.className='mes-card';
+      card.innerHTML=`<div class="mes-card-label">${MESES_ES[mo-1]} ${yr}</div><div class="mes-card-total">${fmt(total)}</div><div class="mes-card-sub">${gastosCant} gasto${gastosCant!==1?'s':''}</div>`;
+      card.onclick=()=>{mesResumen=ref;setVistaRes('grupo');};
+      grid.appendChild(card);
+    });
+    c.appendChild(grid);
+    return;
+  }
+
+  // Vista detalle (grupo o categoría) — con navegador de mes
+  const nav=document.createElement('div');nav.className='mes-nav';
+  nav.innerHTML=`<button class="mes-nav-btn" onclick="cambiarMesResumen(-1)">‹ Anterior</button><span class="mes-nav-label">${mesLabel(mesResumen)}</span><button class="mes-nav-btn" onclick="cambiarMesResumen(1)">Siguiente ›</button>`;
+  c.appendChild(nav);
+
+  const gastosMes=gastosDelMes(mesResumen);
+  if(!gastosMes.length){
+    const empty=document.createElement('div');empty.className='empty-state';empty.textContent='No hay gastos en '+mesLabel(mesResumen)+'.';
+    c.appendChild(empty);return;
+  }
+
+  const totalMes=gastosMes.reduce((s,g)=>s+g.monto,0);
+  const totDiv=document.createElement('div');totDiv.className='resumen-total';totDiv.textContent=fmt(totalMes);
+  c.appendChild(totDiv);
+
+  const por={};
+  if(vistaRes==='grupo'){
+    gastosMes.forEach(g=>{por[g.grupo]=(por[g.grupo]||0)+g.monto;});
+    const max=Math.max(...Object.values(por));
+    Object.entries(por).sort((a,b)=>b[1]-a[1]).forEach(([nombre,tot])=>{
+      const gr=state.grupos.find(g=>g.nombre===nombre);
+      const pct=Math.round(tot/totalMes*100);
+      const div=document.createElement('div');div.className='res-item';
+      div.innerHTML=`<div class="res-row"><span class="res-nombre"><span class="dot" style="width:7px;height:7px;background:${gr?gr.color:'#888'}"></span>${gr?gr.emoji:''} ${nombre}</span><div class="res-vals"><span class="res-monto">${fmt(tot)}</span><span class="res-pct">${pct}%</span></div></div><div class="barra-bg"><div class="barra-fill" style="background:${gr?gr.color:'#888'};width:${Math.round(tot/max*100)}%"></div></div>`;
+      c.appendChild(div);
+    });
+  } else {
+    gastosMes.forEach(g=>{por[g.cat]=(por[g.cat]||0)+g.monto;});
+    const max=Math.max(...Object.values(por));
+    Object.entries(por).sort((a,b)=>b[1]-a[1]).forEach(([nombre,tot])=>{
+      const cat=state.categorias.find(c=>c.nombre===nombre);
+      const color=colorG(cat?.grupo);
+      const pct=Math.round(tot/totalMes*100);
+      const div=document.createElement('div');div.className='res-item';
+      div.innerHTML=`<div class="res-row"><span class="res-nombre"><span class="dot" style="width:6px;height:6px;background:${color};flex-shrink:0"></span>${cat?cat.emoji:''} ${nombre}</span><div class="res-vals"><span class="res-monto">${fmt(tot)}</span><span class="res-pct">${pct}%</span></div></div><div class="barra-bg"><div class="barra-fill" style="background:${color};width:${Math.round(tot/max*100)}%"></div></div>`;
+      c.appendChild(div);
+    });
+  }
+}
+
+function cambiarMesResumen(delta){
+  mesResumen=new Date(mesResumen.getFullYear(),mesResumen.getMonth()+delta,1);
+  renderResumen();
+}
+
+// ---- CONFIG ----
+function renderConfig(){
+  const lista=document.getElementById('config-lista');lista.innerHTML='';
+  state.grupos.forEach(g=>{
+    const cats=state.categorias.filter(c=>c.grupo===g.nombre);
+    if(!cats.length)return;
+    const sec=document.createElement('div');sec.style.marginBottom='12px';
+    sec.innerHTML=`<div class="cfg-grupo-label"><span class="dot" style="width:6px;height:6px;background:${g.color}"></span>${g.emoji} ${g.nombre}</div>`;
+    cats.forEach(cat=>{
+      const esFijo=cat.montoFijo!==null;
+      const row=document.createElement('div');row.className='cfg-item';
+      row.innerHTML=`<div class="cfg-item-left">${cat.emoji} ${cat.nombre}${esFijo?`<span class="cfg-badge">📌 ${fmt(cat.montoFijo)}</span>`:''}</div><div class="cfg-actions"><button class="btn-fijar" onclick="abrirCfg('${cat.nombre}')">${esFijo?'Editar':'Fijar $'}</button><button class="btn-del-sm" onclick="eliminarCat('${cat.nombre}')">✕</button></div>`;
+      sec.appendChild(row);
+    });
+    lista.appendChild(sec);
+  });
+  document.getElementById('nc-grupo').innerHTML=state.grupos.map(g=>`<option value="${g.nombre}">${g.emoji} ${g.nombre}</option>`).join('');
+}
+
+function abrirCfg(catNombre){
+  catCfgActual=catNombre;
+  const cat=state.categorias.find(c=>c.nombre===catNombre);
+  document.getElementById('cfg-title').textContent=cat.emoji+' '+cat.nombre;
+  document.getElementById('cfg-monto').value=cat.montoFijo!==null?cat.montoFijo:'';
+  document.getElementById('modal-cfg').classList.add('open');
+  setTimeout(()=>document.getElementById('cfg-monto').focus(),150);
+}
+
+function guardarFijo(){
+  const val=document.getElementById('cfg-monto').value;
+  const cat=state.categorias.find(c=>c.nombre===catCfgActual);
+  const m=parseFloat(val);
+  cat.montoFijo=(val===''||isNaN(m)||m<=0)?null:m;
+  cerrarModal('modal-cfg');
+  guardarState();renderGrupos();renderConfig();
+  toast(cat.montoFijo!==null?'📌 Fijo en '+fmt(cat.montoFijo):cat.nombre+' vuelve a ser editable');
+}
+
+function agregarCat(){
+  const nombre=document.getElementById('nc-nombre').value.trim();
+  const emoji=document.getElementById('nc-emoji').value.trim()||'📌';
+  const grupo=document.getElementById('nc-grupo').value;
+  if(!nombre)return;
+  state.categorias.push({nombre,grupo,emoji,historial:[],montoFijo:null});
+  document.getElementById('nc-nombre').value='';
+  document.getElementById('nc-emoji').value='';
+  guardarState();renderGrupos();renderConfig();
+  toast('✓ Categoría agregada');
+}
+
+function eliminarCat(nombre){
+  state.categorias=state.categorias.filter(c=>c.nombre!==nombre);
+  guardarState();renderGrupos();renderConfig();
+  toast('Categoría eliminada');
+}
+
+function agregarGrupo(){
+  const emoji=document.getElementById('ng-emoji').value.trim()||'🏷️';
+  const nombre=document.getElementById('ng-nombre').value.trim();
+  const color=document.getElementById('ng-color').value;
+  if(!nombre)return;
+  state.grupos.push({nombre,emoji,color});
+  document.getElementById('ng-emoji').value='';
+  document.getElementById('ng-nombre').value='';
+  guardarState();renderConfig();
+  toast('✓ Grupo creado');
+}
+
+// ---- VOZ (sin IA) ----
+function toggleMic(){
+  setVozEstado('escuchando');
+  document.getElementById('voz-live').textContent='';
+  document.getElementById('modal-voz').classList.add('open');
+  document.getElementById('btn-mic').classList.add('active');
+  iniciarVoz();
+}
+
+function cerrarModalVoz(){
+  if(recognition){try{recognition.stop();}catch(e){}recognition=null;}
+  document.getElementById('modal-voz').classList.remove('open');
+  document.getElementById('btn-mic').classList.remove('active');
+}
+
+function reiniciarVoz(){setVozEstado('escuchando');document.getElementById('voz-live').textContent='';iniciarVoz();}
+
+function setVozEstado(e){
+  ['escuchando','confirmar','error'].forEach(s=>
+    document.getElementById('voz-'+s).style.display=s===e?'':'none'
+  );
+}
+
+function iniciarVoz(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    setVozEstado('error');
+    document.getElementById('voz-error-msg').textContent='Tu navegador no soporta reconocimiento de voz. Usá Chrome en Android.';
+    return;
+  }
+  recognition=new SR();recognition.lang='es-AR';recognition.interimResults=true;
+  transcripcionFinal='';
+  recognition.onresult=e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal)transcripcionFinal+=e.results[i][0].transcript;
+      else interim+=e.results[i][0].transcript;
+    }
+    document.getElementById('voz-live').textContent=transcripcionFinal||interim;
+  };
+  recognition.onend=()=>{
+    document.getElementById('btn-mic').classList.remove('active');
+    if(transcripcionFinal.trim())interpretarVoz(transcripcionFinal.trim());
+    else{setVozEstado('error');document.getElementById('voz-error-msg').textContent='No escuché nada. Intentá de nuevo.';}
+  };
+  recognition.onerror=e=>{
+    document.getElementById('btn-mic').classList.remove('active');
+    setVozEstado('error');
+    document.getElementById('voz-error-msg').textContent=e.error==='not-allowed'?'Necesito permiso para usar el micrófono.':'Error al escuchar. Intentá de nuevo.';
+  };
+  recognition.start();
+}
+
+function interpretarVoz(texto){
+  // Extraer número — soporta "45 mil", "45k", "45 lucas", "45000", "mil quinientos"
+  const textoLower=texto.toLowerCase();
+  let monto=0;
+  const milMatch=textoLower.match(/(\d+(?:\.\d+)?)\s*(mil|k|lucas)/);
+  const numMatch=textoLower.match(/\b(\d{3,})\b/);
+  const milQuinMatch=textoLower.match(/mil\s*(?:y\s*)?quinientos?/);
+  if(milQuinMatch)monto=1500;
+  else if(milMatch)monto=parseFloat(milMatch[1])*1000;
+  else if(numMatch)monto=parseFloat(numMatch[1]);
+
+  if(!monto){
+    setVozEstado('error');
+    document.getElementById('voz-error-msg').textContent='No encontré un monto en "'+texto+'". Ejemplo: "psicólogo 45000"';
+    return;
+  }
+
+  // Buscar categoría más parecida
+  const textoNorm=textoLower.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  let mejorCat=null,mejorScore=0;
+  state.categorias.forEach(cat=>{
+    const catNorm=cat.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const palabras=catNorm.split(/[\s\/]+/);
+    let score=0;
+    palabras.forEach(p=>{if(p.length>2&&textoNorm.includes(p))score+=p.length;});
+    // también chequear alias comunes
+    const aliases={
+      'psicologo':['psi','psico','psicólogo','terapia','terapeuta'],
+      'gimnasio':['gym','gimansio'],
+      'pedidos ya':['pedidos','delivery','rappi','uber eats'],
+      'kiosco / chino':['kiosco','chino','almacen','kioskco'],
+      'comida oficina':['oficina','almuerzo','trabajo'],
+      'transporte':['colectivo','subte','bus','bondi','micro'],
+      'cuidado personal':['farmacia','peluqueria','barberia','corte'],
+    };
+    const catKey=catNorm.replace(/\s*\/\s*/g,' ').trim();
+    if(aliases[catKey]){
+      aliases[catKey].forEach(a=>{if(textoNorm.includes(a))score+=a.length+2;});
+    }
+    if(score>mejorScore){mejorScore=score;mejorCat=cat;}
+  });
+
+  if(!mejorCat||mejorScore===0){
+    setVozEstado('error');
+    document.getElementById('voz-error-msg').textContent='No reconocí la categoría en "'+texto+'". Intentá con el nombre exacto.';
+    return;
+  }
+
+  vozResultado={cat:mejorCat,monto};
+  document.getElementById('vc-emoji').textContent=mejorCat.emoji;
+  document.getElementById('vc-nombre').textContent=mejorCat.nombre;
+  document.getElementById('vc-grupo').textContent=mejorCat.grupo;
+  document.getElementById('vc-monto').value=monto;
+  setVozEstado('confirmar');
+}
+
+function confirmarVoz(){
+  if(!vozResultado)return;
+  const monto=parseFloat(document.getElementById('vc-monto').value);
+  if(!monto||monto<=0)return;
+  const cat=vozResultado.cat;
+  cat.historial.push(monto);
+  const g={id:Date.now(),cat:cat.nombre,grupo:cat.grupo,emoji:cat.emoji,monto,ts:new Date().toISOString(),fuenteVoz:true};
+  state.gastos.unshift(g);
+  cerrarModalVoz();
+  guardarState();actualizarTotales();renderGrupos();
+  syncSheets(g);
+  toast('🎙️ '+cat.nombre+' — '+fmt(monto));
+  vozResultado=null;
+}
+
+// ---- MODALES ----
+function cerrarModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-overlay').forEach(el=>{
+  el.addEventListener('click',e=>{
+    if(e.target===el){
+      if(el.id==='modal-voz')cerrarModalVoz();
+      else cerrarModal(el.id);
+    }
+  });
+});
+
+// ---- TOAST ----
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.display='block';
+  clearTimeout(window._tt);
+  window._tt=setTimeout(()=>t.style.display='none',2400);
+}
+
+// ---- INIT ----
+mesFiltro=new Date();mesResumen=new Date();
+renderGrupos();actualizarTotales();actualizarHistorial();
+</script>
+</body>
+</html>
