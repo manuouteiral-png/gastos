@@ -806,7 +806,6 @@ function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f
 function interpretarVoz(texto){
   const textoNorm=norm(texto);
   const montoDebug=textoANumero(texto);
-  alert('Transcripción: "'+texto+'"\nNormalizado: "'+textoNorm+'"\nMonto detectado: '+montoDebug);
   const monto=montoDebug;
   if(!monto||monto<=0){
     setVozEstado('error');
