@@ -776,20 +776,14 @@ function iniciarVoz(){
 function textoANumero(txt){
   const norm=txt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
   // Si hay número arábigo directo, usarlo
-  // Caso "45 mil", "45mil", "45k", "45 lucas" — número arábigo seguido de multiplicador
-  const arabigoMil=norm.match(/\b(\d[\d.,]*)\s*(mil|k|lucas)\b/);
-  if(arabigoMil){
-    const raw=arabigoMil[1];
-    const n=/[.,]\d{3}$/.test(raw)?parseFloat(raw.replace(/[.,]/g,'')):parseFloat(raw.replace(/\./g,'').replace(',','.'));
-    return n*1000;
-  }
-  // Caso "50,000" o "50.000" o "50000" — número grande sin multiplicador
-  const arabigoPlain=norm.match(/\b(\d[\d.,]*)\b/);
-  if(arabigoPlain){
-    const raw=arabigoPlain[1];
-    if(/[.,]\d{3}$/.test(raw)) return parseFloat(raw.replace(/[.,]/g,''));
-    return parseFloat(raw.replace(/\./g,'').replace(',','.'));
-  }
+  // Limpiar comas y puntos — nunca hay decimales, siempre son separadores de miles
+  const normLimpio=norm.replace(/[.,]/g,'');
+  // Caso "45 mil", "45k", "45 lucas"
+  const arabigoMil=normLimpio.match(/\b(\d+)\s*(mil|k|lucas)\b/);
+  if(arabigoMil) return parseInt(arabigoMil[1])*1000;
+  // Caso número arábigo solo: "50000", "8500", etc
+  const arabigoPlain=normLimpio.match(/\b(\d{2,})\b/);
+  if(arabigoPlain) return parseInt(arabigoPlain[1]);
   const unidades={'cero':0,'un':1,'uno':1,'una':1,'dos':2,'tres':3,'cuatro':4,'cinco':5,'seis':6,'siete':7,'ocho':8,'nueve':9,'diez':10,'once':11,'doce':12,'trece':13,'catorce':14,'quince':15,'dieciseis':16,'diecisiete':17,'dieciocho':18,'diecinueve':19,'veinte':20,'veintiuno':21,'veintidos':22,'veintitres':23,'veinticuatro':24,'veinticinco':25,'veintiseis':26,'veintisiete':27,'veintiocho':28,'veintinueve':29};
   const decenas={'treinta':30,'cuarenta':40,'cincuenta':50,'sesenta':60,'setenta':70,'ochenta':80,'noventa':90};
   const centenas={'cien':100,'ciento':100,'doscientos':200,'doscientas':200,'trescientos':300,'trescientas':300,'cuatrocientos':400,'cuatrocientas':400,'quinientos':500,'quinientas':500,'seiscientos':600,'seiscientas':600,'setecientos':700,'setecientas':700,'ochocientos':800,'ochocientas':800,'novecientos':900,'novecientas':900};
