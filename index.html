@@ -776,17 +776,19 @@ function iniciarVoz(){
 function textoANumero(txt){
   const norm=txt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
   // Si hay número arábigo directo, usarlo
-  const arabigo=norm.match(/\b(\d[\d.,]*)\b/);
-  if(arabigo){
-    const raw=arabigo[1];
-    // "50,000" o "50.000" → 50000 (separador de miles)
-    // "1,5" o "1.5" → 1.5 (decimal) — si hay exactamente 3 dígitos tras el separador, es miles
-    let n;
-    if(/[.,]\d{3}$/.test(raw)) n=parseFloat(raw.replace(/[.,]/g,''));
-    else n=parseFloat(raw.replace(/\./g,'').replace(',','.'));
-    const resto=norm.slice(norm.indexOf(raw)+raw.length);
-    if(/\b(mil|k|lucas)\b/.test(resto))return n*1000;
-    return n;
+  // Caso "45 mil", "45mil", "45k", "45 lucas" — número arábigo seguido de multiplicador
+  const arabigoMil=norm.match(/\b(\d[\d.,]*)\s*(mil|k|lucas)\b/);
+  if(arabigoMil){
+    const raw=arabigoMil[1];
+    const n=/[.,]\d{3}$/.test(raw)?parseFloat(raw.replace(/[.,]/g,'')):parseFloat(raw.replace(/\./g,'').replace(',','.'));
+    return n*1000;
+  }
+  // Caso "50,000" o "50.000" o "50000" — número grande sin multiplicador
+  const arabigoPlain=norm.match(/\b(\d[\d.,]*)\b/);
+  if(arabigoPlain){
+    const raw=arabigoPlain[1];
+    if(/[.,]\d{3}$/.test(raw)) return parseFloat(raw.replace(/[.,]/g,''));
+    return parseFloat(raw.replace(/\./g,'').replace(',','.'));
   }
   const unidades={'cero':0,'un':1,'uno':1,'una':1,'dos':2,'tres':3,'cuatro':4,'cinco':5,'seis':6,'siete':7,'ocho':8,'nueve':9,'diez':10,'once':11,'doce':12,'trece':13,'catorce':14,'quince':15,'dieciseis':16,'diecisiete':17,'dieciocho':18,'diecinueve':19,'veinte':20,'veintiuno':21,'veintidos':22,'veintitres':23,'veinticuatro':24,'veinticinco':25,'veintiseis':26,'veintisiete':27,'veintiocho':28,'veintinueve':29};
   const decenas={'treinta':30,'cuarenta':40,'cincuenta':50,'sesenta':60,'setenta':70,'ochenta':80,'noventa':90};
