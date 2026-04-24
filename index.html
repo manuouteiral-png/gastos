@@ -772,51 +772,89 @@ function iniciarVoz(){
   recognition.start();
 }
 
-function interpretarVoz(texto){
-  // Extraer número — soporta "45 mil", "45k", "45 lucas", "45000", "mil quinientos"
-  const textoLower=texto.toLowerCase();
-  let monto=0;
-  const milMatch=textoLower.match(/(\d+(?:\.\d+)?)\s*(mil|k|lucas)/);
-  const numMatch=textoLower.match(/\b(\d{3,})\b/);
-  const milQuinMatch=textoLower.match(/mil\s*(?:y\s*)?quinientos?/);
-  if(milQuinMatch)monto=1500;
-  else if(milMatch)monto=parseFloat(milMatch[1])*1000;
-  else if(numMatch)monto=parseFloat(numMatch[1]);
+// Convierte texto hablado a número: "cuarenta y cinco mil" → 45000
+function textoANumero(txt){
+  const norm=txt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  // Si hay número arábigo directo, usarlo
+  const arabigo=norm.match(/\b(\d[\d.,]*)\b/);
+  if(arabigo){
+    const n=parseFloat(arabigo[1].replace(/\./g,'').replace(',','.'));
+    // chequear si viene "mil" o "k" después
+    const resto=norm.slice(norm.indexOf(arabigo[1])+arabigo[1].length);
+    if(/\b(mil|k|lucas)\b/.test(resto))return n*1000;
+    return n;
+  }
+  const unidades={'cero':0,'un':1,'uno':1,'una':1,'dos':2,'tres':3,'cuatro':4,'cinco':5,'seis':6,'siete':7,'ocho':8,'nueve':9,'diez':10,'once':11,'doce':12,'trece':13,'catorce':14,'quince':15,'dieciseis':16,'diecisiete':17,'dieciocho':18,'diecinueve':19,'veinte':20,'veintiuno':21,'veintidos':22,'veintitres':23,'veinticuatro':24,'veinticinco':25,'veintiseis':26,'veintisiete':27,'veintiocho':28,'veintinueve':29};
+  const decenas={'treinta':30,'cuarenta':40,'cincuenta':50,'sesenta':60,'setenta':70,'ochenta':80,'noventa':90};
+  const centenas={'cien':100,'ciento':100,'doscientos':200,'doscientas':200,'trescientos':300,'trescientas':300,'cuatrocientos':400,'cuatrocientas':400,'quinientos':500,'quinientas':500,'seiscientos':600,'seiscientas':600,'setecientos':700,'setecientas':700,'ochocientos':800,'ochocientas':800,'novecientos':900,'novecientas':900};
+  const palabras=norm.split(/[\s\-]+/).filter(p=>p&&p!=='y'&&p!=='con'&&p!=='pesos');
+  let total=0,parcial=0,encontro=false;
+  for(const p of palabras){
+    if(centenas[p]!==undefined){parcial+=centenas[p];encontro=true;}
+    else if(decenas[p]!==undefined){parcial+=decenas[p];encontro=true;}
+    else if(unidades[p]!==undefined){parcial+=unidades[p];encontro=true;}
+    else if(p==='mil'||p==='k'||p==='lucas'){total+=(parcial||1)*1000;parcial=0;encontro=true;}
+    else if(p==='millon'||p==='millones'){total+=(parcial||1)*1000000;parcial=0;encontro=true;}
+  }
+  total+=parcial;
+  return encontro?total:0;
+}
 
-  if(!monto){
+// Normaliza texto para comparación: quita tildes, mayúsculas, puntuación
+function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').trim();}
+
+function interpretarVoz(texto){
+  const textoNorm=norm(texto);
+
+  // 1. Extraer monto — primero prueba texto escrito, luego números arábigos
+  const monto=textoANumero(texto);
+  if(!monto||monto<=0){
     setVozEstado('error');
-    document.getElementById('voz-error-msg').textContent='No encontré un monto en "'+texto+'". Ejemplo: "psicólogo 45000"';
+    document.getElementById('voz-error-msg').textContent='No encontré el monto en "'+texto+'". Probá: "psicólogo cuarenta y cinco mil"';
     return;
   }
 
-  // Buscar categoría más parecida
-  const textoNorm=textoLower.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  // 2. Buscar categoría — scoring por palabras coincidentes + aliases
+  const ALIASES={
+    'psicologo':['psi','psico','terapia','terapeuta','sesion'],
+    'gimnasio':['gym','gimansio','crossfit','entrenamiento'],
+    'pedidos ya':['pedidos','delivery','rappi','uber eats','pidiendo'],
+    'kiosco chino':['kiosco','chino','almacen','despensa','quiosco'],
+    'comida oficina':['oficina','trabajo','almuerzo','vianda','medialunas'],
+    'transporte':['colectivo','subte','bus','bondi','micro','tren','taxi','remis'],
+    'cuidado personal':['peluqueria','barberia','corte','pelo','farmacia','perfumeria'],
+    'auto':['nafta','combustible','service','taller','estacionamiento','autopista','peaje'],
+    'salidas':['bar','boliche','cerveza','pizza','restau','restaurant'],
+    'asados':['asado','carne','parrilla','carniceria'],
+    'cancha':['futbol','padel','tenis','deporte','partido'],
+    'recitales':['recital','show','concierto','teatro','entrada'],
+    'suscripciones':['netflix','spotify','disney','hbo','youtube','prime'],
+    'desarrollo':['libro','curso','udemy','capacitacion','evento'],
+    'carpinteria':['madera','herramienta','ferreteria','pintura'],
+    'ropa':['zapatillas','remera','pantalon','camisa','ropa'],
+    'regalos':['regalo','presente'],
+  };
+
   let mejorCat=null,mejorScore=0;
   state.categorias.forEach(cat=>{
-    const catNorm=cat.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    const palabras=catNorm.split(/[\s\/]+/);
+    const catNorm=norm(cat.nombre);
+    const catPalabras=catNorm.split(/\s+/);
     let score=0;
-    palabras.forEach(p=>{if(p.length>2&&textoNorm.includes(p))score+=p.length;});
-    // también chequear alias comunes
-    const aliases={
-      'psicologo':['psi','psico','psicólogo','terapia','terapeuta'],
-      'gimnasio':['gym','gimansio'],
-      'pedidos ya':['pedidos','delivery','rappi','uber eats'],
-      'kiosco / chino':['kiosco','chino','almacen','kioskco'],
-      'comida oficina':['oficina','almuerzo','trabajo'],
-      'transporte':['colectivo','subte','bus','bondi','micro'],
-      'cuidado personal':['farmacia','peluqueria','barberia','corte'],
-    };
-    const catKey=catNorm.replace(/\s*\/\s*/g,' ').trim();
-    if(aliases[catKey]){
-      aliases[catKey].forEach(a=>{if(textoNorm.includes(a))score+=a.length+2;});
+    // Coincidencia directa por palabras del nombre
+    catPalabras.forEach(p=>{if(p.length>2&&textoNorm.includes(p))score+=p.length*2;});
+    // Coincidencia completa del nombre (bonus)
+    if(textoNorm.includes(catNorm))score+=20;
+    // Aliases
+    const catKey=catNorm.replace(/\s*\/\s*/g,' ').replace(/\s+/g,' ');
+    if(ALIASES[catKey]){
+      ALIASES[catKey].forEach(a=>{if(textoNorm.includes(norm(a)))score+=a.length+3;});
     }
     if(score>mejorScore){mejorScore=score;mejorCat=cat;}
   });
 
   if(!mejorCat||mejorScore===0){
     setVozEstado('error');
-    document.getElementById('voz-error-msg').textContent='No reconocí la categoría en "'+texto+'". Intentá con el nombre exacto.';
+    document.getElementById('voz-error-msg').textContent='No reconocí la categoría en "'+texto+'". Decí el nombre de la categoría más claro.';
     return;
   }
 
