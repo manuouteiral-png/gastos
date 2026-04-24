@@ -778,9 +778,13 @@ function textoANumero(txt){
   // Si hay número arábigo directo, usarlo
   const arabigo=norm.match(/\b(\d[\d.,]*)\b/);
   if(arabigo){
-    const n=parseFloat(arabigo[1].replace(/\./g,'').replace(',','.'));
-    // chequear si viene "mil" o "k" después
-    const resto=norm.slice(norm.indexOf(arabigo[1])+arabigo[1].length);
+    const raw=arabigo[1];
+    // "50,000" o "50.000" → 50000 (separador de miles)
+    // "1,5" o "1.5" → 1.5 (decimal) — si hay exactamente 3 dígitos tras el separador, es miles
+    let n;
+    if(/[.,]\d{3}$/.test(raw)) n=parseFloat(raw.replace(/[.,]/g,''));
+    else n=parseFloat(raw.replace(/\./g,'').replace(',','.'));
+    const resto=norm.slice(norm.indexOf(raw)+raw.length);
     if(/\b(mil|k|lucas)\b/.test(resto))return n*1000;
     return n;
   }
